@@ -1,0 +1,96 @@
+# GitHub Actions Workflow for Math Adventure (수학 탐험대) CI/CD
+name: Math Adventure CI/CD
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Lint and Type Check
+      run: npm run lint
+
+    - name: Build application
+      run: npm run build
+      env:
+        # Injects a dummy key for compile-time checking if needed, 
+        # though build doesn't require runtime connection
+        GEMINI_API_KEY: "dummy-key-for-ci"
+
+    # [optional] Archive production build artifacts so you can access them via GitHub Actions UI
+    - name: Upload production artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: production-build
+        path: |
+          dist
+          package.json
+
+  deploy:
+    # This step runs only after a successful build-and-test on the main branch
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # === 배포 환경에 맞는 설정을 활성화하여 사용하세요 ===
+    # 예시 1: SSH 원격 서버 배포 (개인 VPS, 클라우드 가상머신 등)
+    # 아래 주석을 풀고 GitHub Repository Secrets에 SSH_HOST, SSH_USERNAME, SSH_KEY, PORT 등을 채워 사용 가능합니다.
+    # 
+    # - name: Deploy to VPS via SSH
+    #   uses: appleboy/ssh-action@master
+    #   with:
+    #     host: ${{ secrets.SSH_HOST }}
+    #     username: ${{ secrets.SSH_USERNAME }}
+    #     key: ${{ secrets.SSH_KEY }}
+    #     port: ${{ secrets.SSH_PORT || 22 }}
+    #     script: |
+    #       cd /var/www/math-adventure
+    #       git pull origin main
+    #       npm install --production
+    #       npm run build
+    #       pm2 restart math-adventure-server || pm2 start dist/server.cjs --name "math-adventure-server"
+
+    # 예시 2: Google Cloud Run 배포 (GCP 사용 시)
+    # 
+    # - name: Authenticate to Google Cloud
+    #   uses: google-github-actions/auth@v2
+    #   with:
+    #     credentials_json: ${{ secrets.GCP_SA_KEY }}
+    # 
+    # - name: Set up Cloud SDK
+    #   uses: google-github-actions/setup-gcloud@v2
+    # 
+    # - name: Deploy to Cloud Run
+    #   run: |
+    #     gcloud run deploy math-adventure-app \
+    #       --source . \
+    #       --region asia-northeast3 \
+    #       --set-env-vars="GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
+    #       --allow-unauthenticated
+
+    # 예시 3: Render, Heroku 또는 Vercel, Supabase와 같은 플랫폼 배포
+    - name: Echo Status
+      run: |
+        echo "🎉 CI 빌드 및 테스트가 안전하게 성공 완료되었습니다!"
+        echo "이 단계에서 배포 프로세스 스크립트(Docker 빌드, AWS / Google Cloud / Render 업로드 등)를 추가하여 즉각 배포를 진행할 수 있습니다."
