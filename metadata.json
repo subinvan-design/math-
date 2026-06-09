@@ -1,0 +1,6 @@
+{
+  "name": "수학 탐험대 (Math Adventure)",
+  "description": "아이들이 재미있는 스토리와 모험을 통해 덧셈, 뺄셈, 곱셈 및 문장제 수학 문제를 배우고 AI 튜터와 함께 재미있게 대화할 수 있는 게임형 수학 학습 앱입니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
